@@ -1,6 +1,6 @@
 use std::{io::{self, Stdout}, thread, time::Duration};
 use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}};
-use tui::{backend::{CrosstermBackend, Backend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect}, widgets::{Block, Borders, Clear, BorderType}, style::{Modifier, Style, Color}};
+use tui::{backend::{CrosstermBackend, Backend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Clear, BorderType, Paragraph}, style::{Modifier, Style, Color}, text::{Spans, Span}};
 
 fn main() -> Result<(), io::Error> {
 
@@ -52,9 +52,10 @@ fn ui(f: &mut Frame<CrosstermBackend<io::Stdout>>) {
     let main_block = Block::default()
     .title("Tic Tac Toe")
     .borders(Borders::ALL)
-    .border_type(tui::widgets::BorderType::Double);
+    .border_type(tui::widgets::BorderType::Double)
+    .border_style(Style::default().fg(Color::White));
 
-    let area = centered_rect(30, 55, size);
+    let area = centered_rect(30, 55, size, f);
 
 
     game_area_render(f, main_block.inner(area));
@@ -65,7 +66,7 @@ fn ui(f: &mut Frame<CrosstermBackend<io::Stdout>>) {
 
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<CrosstermBackend<io::Stdout>>) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -77,6 +78,16 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
             .as_ref(),
         )
         .split(r);
+
+    let text = vec![
+        Spans::from(Span::raw("Movement: ← ↓ ↑ →")),
+        Spans::from(Span::raw("Claim a box: ENTER / SPACE")),
+        Spans::from(Span::raw("Quit: q")),
+    ];
+    let helper_paragraph = Paragraph::new(text)
+        .alignment(Alignment::Center);
+    
+    f.render_widget(helper_paragraph, popup_layout[2]);
 
     Layout::default()
         .direction(Direction::Horizontal)
@@ -107,7 +118,7 @@ fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect) {
             for slot in layout_horizontal.iter() {
                 let block = Block::default()
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Green));
+                    .border_style(Style::default().fg(Color::LightYellow));
                 f.render_widget(block, *slot);
             }
         }
