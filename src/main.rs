@@ -2,6 +2,30 @@ use std::{io::{self, Stdout}, thread, time::Duration};
 use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}};
 use tui::{backend::{CrosstermBackend, Backend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Clear, BorderType, Paragraph}, style::{Modifier, Style, Color}, text::{Spans, Span}};
 
+
+struct GameState{
+    cursor_x: i32,
+    cursor_y: i32,
+    board: Vec<Vec<char>>
+}
+
+impl Default for GameState{
+    fn default() -> Self{
+        let cursor_x = 0;
+        let cursor_y= 0;
+        let board = vec![
+            vec![' ', ' ', ' '],
+            vec![' ', ' ', ' '],
+            vec![' ', ' ', ' '],
+        ];
+
+        GameState { 
+            cursor_x: cursor_x, 
+            cursor_y: cursor_y, 
+            board: board }
+    }
+}
+
 fn main() -> Result<(), io::Error> {
 
     // Setup the terminal
