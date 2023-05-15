@@ -1,18 +1,19 @@
 use std::{io::{self}};
 use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}};
-use tui::{backend::{CrosstermBackend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Paragraph}, style::{ Style, Color, Modifier}, text::{Spans, Span}};
+use tui::{backend::{CrosstermBackend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Paragraph, BorderType}, style::{ Style, Color, Modifier}, text::{Spans, Span}};
+
 
 
 struct GameState{
     cursor_x: i32,
     cursor_y: i32,
+    next_player: String,
     board: Vec<Vec<char>>
 }
 
 impl Default for GameState{
     fn default() -> Self{
-        let cursor_x = 0;
-        let cursor_y= 0;
+
         let board = vec![
             vec![' ', ' ', ' '],
             vec![' ', ' ', ' '],
@@ -20,8 +21,9 @@ impl Default for GameState{
         ];
 
         GameState { 
-            cursor_x: cursor_x, 
-            cursor_y: cursor_y, 
+            cursor_x: 0, 
+            cursor_y: 0,
+            next_player: "X".to_owned(),
             board: board }
     }
 }
@@ -116,10 +118,10 @@ fn ui(f: &mut Frame<CrosstermBackend<io::Stdout>>, state: &mut GameState) {
     let main_block = Block::default()
     .title("Tic Tac Toe")
     .borders(Borders::ALL)
-    .border_type(tui::widgets::BorderType::Double)
+    .border_type(tui::widgets::BorderType::Thick)
     .border_style(Style::default().fg(Color::White));
 
-    let area = centered_rect(30, 55, size, f);
+    let area = centered_rect(30, 55, size, f,state);
 
     // Game board
     game_area_render(f, main_block.inner(area), state);
@@ -130,7 +132,7 @@ fn ui(f: &mut Frame<CrosstermBackend<io::Stdout>>, state: &mut GameState) {
 
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<CrosstermBackend<io::Stdout>>) -> Rect {
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<CrosstermBackend<io::Stdout>>, state: &mut GameState) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -143,12 +145,24 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Crosster
         )
         .split(r);
 
-    let text = vec![
+    // Player turn text
+    let player_text = std::iter::repeat(Spans::from(Span::raw("")))
+    .take(10)
+    .chain(std::iter::once(Spans::from(Span::raw(format!("Next player: {}", state.next_player)))))
+    .collect::<Vec<_>>();
+
+    let player_turn_paragraph = Paragraph::new(player_text)
+        .alignment(Alignment::Center).style(Style::default().add_modifier(Modifier::BOLD));
+    
+    f.render_widget(player_turn_paragraph, popup_layout[0]);
+
+    // Help text
+    let helper_text = vec![
         Spans::from(Span::raw("Movement: ← ↓ ↑ →")),
         Spans::from(Span::raw("Claim a box: ENTER / SPACE")),
         Spans::from(Span::raw("Quit: q")),
     ];
-    let helper_paragraph = Paragraph::new(text)
+    let helper_paragraph = Paragraph::new(helper_text)
         .alignment(Alignment::Center);
     
     f.render_widget(helper_paragraph, popup_layout[2]);
@@ -182,16 +196,15 @@ fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state:
 
             for (slot_index, slot) in layout_horizontal.iter().enumerate() {
                 let mut box_color = Color::LightYellow;
-                let mut box_modifier = Modifier::HIDDEN;
 
                 if chunk_index == state.cursor_y as usize && slot_index == state.cursor_x as usize {
                     box_color = Color::Cyan;
-                    box_modifier = Modifier::RAPID_BLINK
                 }
 
                 let block = Block::default()
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(box_color).add_modifier(box_modifier));
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::default().fg(box_color));
                 f.render_widget(block, *slot);
             }
         }
