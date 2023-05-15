@@ -1,6 +1,6 @@
-use std::{io::{self, Stdout}, thread, time::Duration};
+use std::{io::{self}};
 use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}};
-use tui::{backend::{CrosstermBackend, Backend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Clear, BorderType, Paragraph}, style::{Modifier, Style, Color}, text::{Spans, Span}};
+use tui::{backend::{CrosstermBackend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Paragraph}, style::{ Style, Color, Modifier}, text::{Spans, Span}};
 
 
 struct GameState{
@@ -26,6 +26,41 @@ impl Default for GameState{
     }
 }
 
+impl GameState{
+    fn move_horizontal(&mut self, value: i32){
+        match value{
+            -1 => {
+                if self.cursor_x != 0{
+                    self.cursor_x -= 1;
+                }
+            }
+            1 => {
+                if self.cursor_x != 2 {
+                    self.cursor_x += 1;
+                }
+            }
+            _ => panic!("Value must be -1 or 1")
+        }
+
+    }    
+    fn move_vertical(&mut self, value: i32){
+        match value{
+            -1 => {
+                if self.cursor_y != 0{
+                    self.cursor_y -= 1;
+                }
+            }
+            1 => {
+                if self.cursor_y != 2 {
+                    self.cursor_y += 1;
+                }
+            }
+            _ => panic!("Value must be -1 or 1")
+        }
+
+    }    
+}
+
 fn main() -> Result<(), io::Error> {
 
     // Setup the terminal
@@ -33,18 +68,21 @@ fn main() -> Result<(), io::Error> {
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
 
+    // Important variables
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    
-    run_app(&mut terminal)
+    let mut game_state = GameState::default();
+
+    // App loop
+    run_app(&mut terminal, &mut game_state)
 
 }
 
-fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<()>{
+fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, state: &mut GameState) -> io::Result<()>{
     loop {
         // Draw the ui
         terminal.draw(|f: &mut Frame<CrosstermBackend<io::Stdout>>| {
-            ui(f)
+            ui(f, state)
         })?;
 
         // Catch inputs
@@ -55,10 +93,11 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<
                     execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
                     return Ok(());
                 }
-                KeyCode::Left => println!("Left"),
-                KeyCode::Right => println!("Right"),
-                KeyCode::Up => println!("Up"),
-                KeyCode::Down => println!("Down"),
+                KeyCode::Left => state.move_horizontal(-1),
+                KeyCode::Right => state.move_horizontal(1),
+                KeyCode::Up => state.move_vertical(-1),
+                KeyCode::Down => state.move_vertical(1),
+                KeyCode::Enter | KeyCode::Char(' ') => println!("enter"),
                 _ => println!("other")
 
             }
@@ -69,7 +108,8 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<
 }
 
 
-fn ui(f: &mut Frame<CrosstermBackend<io::Stdout>>) {
+
+fn ui(f: &mut Frame<CrosstermBackend<io::Stdout>>, state: &mut GameState) {
     let size = f.size();
 
     // MAIN BLOCK
@@ -81,8 +121,8 @@ fn ui(f: &mut Frame<CrosstermBackend<io::Stdout>>) {
 
     let area = centered_rect(30, 55, size, f);
 
-
-    game_area_render(f, main_block.inner(area));
+    // Game board
+    game_area_render(f, main_block.inner(area), state);
 
     f.render_widget(main_block, area);
 
@@ -126,23 +166,32 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Crosster
         .split(popup_layout[1])[1]
 }
 
-fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect) {
+// Function to render the board 3x3
+fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state: &mut GameState) {
     let layout_vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Length(r.height / 3); 3])
         .split(r);
 
     for row in layout_vertical.chunks(3) {
-        for chunk in row {
+        for (chunk_index, chunk) in row.iter().enumerate() {
             let layout_horizontal = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(vec![Constraint::Length(chunk.width / 3); 3])
                 .split(*chunk);
 
-            for slot in layout_horizontal.iter() {
+            for (slot_index, slot) in layout_horizontal.iter().enumerate() {
+                let mut box_color = Color::LightYellow;
+                let mut box_modifier = Modifier::HIDDEN;
+
+                if chunk_index == state.cursor_y as usize && slot_index == state.cursor_x as usize {
+                    box_color = Color::Cyan;
+                    box_modifier = Modifier::RAPID_BLINK
+                }
+
                 let block = Block::default()
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::LightYellow));
+                    .border_style(Style::default().fg(box_color).add_modifier(box_modifier));
                 f.render_widget(block, *slot);
             }
         }
