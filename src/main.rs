@@ -5,9 +5,9 @@ use tui::{backend::{CrosstermBackend}, Terminal, Frame, layout::{Layout, Directi
 
 
 struct GameState{
-    cursor_x: i32,
-    cursor_y: i32,
-    next_player: String,
+    cursor_x: usize,
+    cursor_y: usize,
+    next_player: char,
     board: Vec<Vec<char>>
 }
 
@@ -23,7 +23,7 @@ impl Default for GameState{
         GameState { 
             cursor_x: 0, 
             cursor_y: 0,
-            next_player: "X".to_owned(),
+            next_player: 'X',
             board: board }
     }
 }
@@ -60,7 +60,52 @@ impl GameState{
             _ => panic!("Value must be -1 or 1")
         }
 
-    }    
+    }
+    fn select_case(&mut self){
+        if self.board[self.cursor_y][self.cursor_x] == ' '{
+            self.board[self.cursor_y][self.cursor_x] = self.next_player;
+            self.switch_next_player();
+        }
+    }
+
+    fn switch_next_player(&mut self){
+        match self.next_player{
+            'X' => self.next_player = 'O',
+            _ => self.next_player = 'X'
+        }
+    }
+
+    fn ascii_current_case(&mut self, x: usize, y: usize) -> Vec<Spans>{
+
+        let character = self.board[y][x];
+
+        match character{
+            'O' => return vec![
+                Spans::from(Span::raw("   ____  ")),
+                Spans::from(Span::raw("  / __ \\")),
+                Spans::from(Span::raw(" | |  | |")),
+                Spans::from(Span::raw(" | |  | |")),
+                Spans::from(Span::raw(" | |__| |")),
+                Spans::from(Span::raw("  \\____/ ")),
+            ],
+            'X'=> vec![
+                Spans::from(Span::raw("  __   __  ")),
+                Spans::from(Span::raw(" \\ \\ / /")),
+                Spans::from(Span::raw("  \\ V / ")),
+                Spans::from(Span::raw("   > <  ")),
+                Spans::from(Span::raw("  / . \\ ")),
+                Spans::from(Span::raw(" /_/ \\_\\"))],
+            _ => vec![
+                Spans::from(Span::raw("        ")),
+                Spans::from(Span::raw("        ")),
+                Spans::from(Span::raw("        ")),
+                Spans::from(Span::raw("        ")),
+                Spans::from(Span::raw("        ")),
+                Spans::from(Span::raw("        "))
+            ],
+
+        }
+    }
 }
 
 fn main() -> Result<(), io::Error> {
@@ -99,7 +144,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, state: &mut Ga
                 KeyCode::Right => state.move_horizontal(1),
                 KeyCode::Up => state.move_vertical(-1),
                 KeyCode::Down => state.move_vertical(1),
-                KeyCode::Enter | KeyCode::Char(' ') => println!("enter"),
+                KeyCode::Enter | KeyCode::Char(' ') => state.select_case(),
                 _ => println!("other")
 
             }
@@ -157,7 +202,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Crosster
     f.render_widget(player_turn_paragraph, popup_layout[0]);
 
     // Help text
-    let helper_text = vec![
+    let helper_text: Vec<Spans> = vec![
         Spans::from(Span::raw("Movement: ← ↓ ↑ →")),
         Spans::from(Span::raw("Claim a box: ENTER / SPACE")),
         Spans::from(Span::raw("Quit: q")),
@@ -196,6 +241,14 @@ fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state:
 
             for (slot_index, slot) in layout_horizontal.iter().enumerate() {
                 let mut box_color = Color::LightYellow;
+                let ascii_O = "
+                    ____  
+                / __ \\
+                | |  | |
+                | |  | |
+                | |__| |
+                \\____/ 
+                ";           
 
                 if chunk_index == state.cursor_y as usize && slot_index == state.cursor_x as usize {
                     box_color = Color::Cyan;
@@ -205,6 +258,14 @@ fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state:
                     .borders(Borders::ALL)
                     .border_type(BorderType::Rounded)
                     .border_style(Style::default().fg(box_color));
+
+
+                let text_case = state.ascii_current_case(slot_index, chunk_index);
+
+                let text_case_widget = Paragraph::new(text_case)
+                    .block(block.clone())
+                    .alignment(Alignment::Center);
+                f.render_widget(text_case_widget, *slot);
                 f.render_widget(block, *slot);
             }
         }
