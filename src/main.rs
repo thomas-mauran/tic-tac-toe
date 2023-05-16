@@ -1,5 +1,5 @@
 use std::{io::{self}};
-use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}};
+use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}, style::Colors};
 use tui::{backend::{CrosstermBackend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Paragraph, BorderType}, style::{ Style, Color, Modifier}, text::{Spans, Span}};
 
 
@@ -75,9 +75,7 @@ impl GameState{
         }
     }
 
-    fn ascii_current_case(&mut self, x: usize, y: usize) -> Vec<Spans>{
-
-        let character = self.board[y][x];
+    fn ascii_current_case(&mut self, character: char) -> Vec<Spans>{
 
         match character{
             'O' => return vec![
@@ -240,18 +238,11 @@ fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state:
                 .split(*chunk);
 
             for (slot_index, slot) in layout_horizontal.iter().enumerate() {
-                let mut box_color = Color::LightYellow;
-                let ascii_O = "
-                    ____  
-                / __ \\
-                | |  | |
-                | |  | |
-                | |__| |
-                \\____/ 
-                ";           
+                let current_case_char = state.board[chunk_index][slot_index];
+                let mut box_color = Color::LightYellow;       
 
                 if chunk_index == state.cursor_y as usize && slot_index == state.cursor_x as usize {
-                    box_color = Color::Cyan;
+                    box_color = Color::White;
                 }
 
                 let block = Block::default()
@@ -259,12 +250,12 @@ fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state:
                     .border_type(BorderType::Rounded)
                     .border_style(Style::default().fg(box_color));
 
-
-                let text_case = state.ascii_current_case(slot_index, chunk_index);
+                let text_case = state.ascii_current_case(current_case_char);
 
                 let text_case_widget = Paragraph::new(text_case)
                     .block(block.clone())
-                    .alignment(Alignment::Center);
+                    .alignment(Alignment::Center)
+                    .style(Style::default().fg(if current_case_char == 'X' { Color::LightGreen } else { Color::LightRed }));
                 f.render_widget(text_case_widget, *slot);
                 f.render_widget(block, *slot);
             }
