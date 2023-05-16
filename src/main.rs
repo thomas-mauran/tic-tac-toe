@@ -193,7 +193,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Crosster
     // Player turn text
     let player_text = std::iter::repeat(Spans::from(Span::raw("")))
     .take(10)
-    .chain(std::iter::once(Spans::from(Span::raw(format!("Next player: {}", state.next_player)))))
+    .chain(std::iter::once(Spans::from(Span::raw(format!("Player's turn: {}", state.next_player)))))
     .collect::<Vec<_>>();
 
     let player_turn_paragraph = Paragraph::new(player_text)
