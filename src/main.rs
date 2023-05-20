@@ -1,6 +1,6 @@
 use std::{io::{self}};
 use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}, style::Colors};
-use tui::{backend::{CrosstermBackend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Paragraph, BorderType}, style::{ Style, Color, Modifier}, text::{Spans, Span}};
+use ratatui::{backend::{CrosstermBackend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Paragraph, BorderType}, style::{ Style, Color, Modifier}, text::{Spans, Span}};
 
 
 
@@ -8,7 +8,9 @@ struct GameState{
     cursor_x: usize,
     cursor_y: usize,
     next_player: char,
-    board: Vec<Vec<char>>
+    board: Vec<Vec<char>>,
+    case_left: usize,
+    winner: char,
 }
 
 impl Default for GameState{
@@ -24,7 +26,10 @@ impl Default for GameState{
             cursor_x: 0, 
             cursor_y: 0,
             next_player: 'X',
-            board: board }
+            board: board,
+            case_left: 9,
+            winner: ' ',
+            }
     }
 }
 
@@ -43,7 +48,6 @@ impl GameState{
             }
             _ => panic!("Value must be -1 or 1")
         }
-
     }    
     fn move_vertical(&mut self, value: i32){
         match value{
@@ -59,12 +63,11 @@ impl GameState{
             }
             _ => panic!("Value must be -1 or 1")
         }
-
     }
     fn select_case(&mut self){
         if self.board[self.cursor_y][self.cursor_x] == ' '{
             self.board[self.cursor_y][self.cursor_x] = self.next_player;
-            self.switch_next_player();
+            self.check_win();
         }
     }
 
@@ -86,6 +89,7 @@ impl GameState{
                 Spans::from(Span::raw(" | |__| |")),
                 Spans::from(Span::raw("  \\____/ ")),
             ],
+         
             'X'=> vec![
                 Spans::from(Span::raw("  __   __  ")),
                 Spans::from(Span::raw(" \\ \\ / /")),
@@ -103,6 +107,37 @@ impl GameState{
             ],
 
         }
+    }
+
+    fn check_win(&mut self){
+        self.case_left -= 1;
+        // check row win
+        for row in 0..3{
+            if self.board[row][0] != ' ' && self.board[row][0] == self.board[row][1] && self.board[row][1] == self.board[row][2]{
+                self.winner = self.board[row][0];
+            }
+        }
+
+        // check col win
+        for col in 0..3{
+            if self.board[0][col] != ' ' && self.board[0][col] == self.board[1][col] && self.board[1][col] == self.board[2][col]{
+                self.winner = self.board[0][col];
+            }
+        }
+
+        // check for diagonal win
+        if self.board[0][0] != ' ' && self.board[0][0] == self.board[1][1] && self.board[0][0] == self.board[2][2] {
+            self.winner = self.board[0][0];   
+        }
+        // check for diagonal win other side
+        if self.board[0][2] != ' ' && self.board[0][2] == self.board[1][1] && self.board[1][1] == self.board[2][0] {
+            self.winner = self.board[0][2];   
+        }
+        // else we switch the player 
+        else{
+            self.switch_next_player();
+        }
+
     }
 }
 
@@ -161,7 +196,7 @@ fn ui(f: &mut Frame<CrosstermBackend<io::Stdout>>, state: &mut GameState) {
     let main_block = Block::default()
     .title("Tic Tac Toe")
     .borders(Borders::ALL)
-    .border_type(tui::widgets::BorderType::Thick)
+    .border_type(ratatui::widgets::BorderType::Thick)
     .border_style(Style::default().fg(Color::White));
 
     let area = centered_rect(30, 55, size, f,state);
@@ -188,10 +223,18 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Crosster
         )
         .split(r);
 
-    // Player turn text
+    let mut text = format!("Player's turn: {}", state.next_player);
+    // Top text
+    if(state.winner != ' '){
+        text = format!("The winner is player {}", state.winner)
+    }
+
+    if(state.winner == ' ' && state.case_left == 0){
+        text = "It's a draw".to_owned()
+    }
     let player_text = std::iter::repeat(Spans::from(Span::raw("")))
     .take(10)
-    .chain(std::iter::once(Spans::from(Span::raw(format!("Player's turn: {}", state.next_player)))))
+    .chain(std::iter::once(Spans::from(Span::raw(text))))
     .collect::<Vec<_>>();
 
     let player_turn_paragraph = Paragraph::new(player_text)
