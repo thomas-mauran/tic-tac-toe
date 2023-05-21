@@ -15,6 +15,7 @@ docker run --rm -it thomasmauran/tic-tac-toe
 
 ```bash
 git clone git@github.com:thomas-mauran/tic-tac-toe.git
+cd tic-tac-toe
 cargo build --release
 ./target/release/tic-tac-toe
 ```
