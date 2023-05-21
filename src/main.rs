@@ -263,13 +263,13 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Crosster
             Spans::from(Span::raw("Quit: q")),
         ]
     };
-    let player_text = std::iter::repeat(Spans::from(Span::raw("")))
+    let top_text = std::iter::repeat(Spans::from(Span::raw("")))
     .take(10)
     .chain(std::iter::once(Spans::from(Span::raw(top_text))))
     .collect::<Vec<_>>();
 
-    let player_turn_paragraph = Paragraph::new(player_text)
-        .alignment(Alignment::Center).style(Style::default().add_modifier(Modifier::BOLD));
+    let player_turn_paragraph = Paragraph::new(top_text)
+        .alignment(Alignment::Center).style(Style::default().add_modifier(if state.is_game_end() { Modifier::RAPID_BLINK} else {Modifier::BOLD}));
     
     f.render_widget(player_turn_paragraph, popup_layout[0]);
 
