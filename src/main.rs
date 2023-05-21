@@ -151,6 +151,13 @@ impl GameState{
         }
         return false
     }
+
+    fn reload_game(&mut self) {
+        if self.is_game_end() {
+            *self = GameState::default();
+        }
+    }
+    
 } 
 
 fn main() -> Result<(), io::Error> {
@@ -190,6 +197,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, state: &mut Ga
                 KeyCode::Up => state.move_vertical(-1),
                 KeyCode::Down => state.move_vertical(1),
                 KeyCode::Enter | KeyCode::Char(' ') => state.select_case(),
+                KeyCode::Char('r') => state.reload_game(),
                 _ => {},
 
             }
