@@ -1,5 +1,5 @@
 use std::{io::{self}};
-use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}, style::Colors};
+use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}};
 use ratatui::{backend::{CrosstermBackend}, Terminal, Frame, layout::{Layout, Direction, Constraint, Rect, Alignment}, widgets::{Block, Borders, Paragraph, BorderType}, style::{ Style, Color, Modifier}, text::{Spans, Span}};
 
 
@@ -35,33 +35,38 @@ impl Default for GameState{
 
 impl GameState{
     fn move_horizontal(&mut self, value: i32){
-        match value{
-            -1 => {
-                if self.cursor_x != 0{
-                    self.cursor_x -= 1;
+        if !self.is_game_end(){
+            match value{
+                -1 => {
+                    if self.cursor_x != 0{
+                        self.cursor_x -= 1;
+                    }
                 }
-            }
-            1 => {
-                if self.cursor_x != 2 {
-                    self.cursor_x += 1;
+                1 => {
+                    if self.cursor_x != 2 {
+                        self.cursor_x += 1;
+                    }
                 }
+                _ => panic!("Value must be -1 or 1")
             }
-            _ => panic!("Value must be -1 or 1")
         }
+        
     }    
     fn move_vertical(&mut self, value: i32){
-        match value{
-            -1 => {
-                if self.cursor_y != 0{
-                    self.cursor_y -= 1;
+        if !self.is_game_end(){
+            match value{
+                -1 => {
+                    if self.cursor_y != 0{
+                        self.cursor_y -= 1;
+                    }
                 }
-            }
-            1 => {
-                if self.cursor_y != 2 {
-                    self.cursor_y += 1;
+                1 => {
+                    if self.cursor_y != 2 {
+                        self.cursor_y += 1;
+                    }
                 }
+                _ => panic!("Value must be -1 or 1")
             }
-            _ => panic!("Value must be -1 or 1")
         }
     }
     fn select_case(&mut self){
@@ -139,7 +144,14 @@ impl GameState{
         }
 
     }
-}
+
+    fn is_game_end(&mut self) -> bool {
+        if self.winner != ' ' || self.case_left == 0{
+            return true
+        }
+        return false
+    }
+} 
 
 fn main() -> Result<(), io::Error> {
 
@@ -178,7 +190,7 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, state: &mut Ga
                 KeyCode::Up => state.move_vertical(-1),
                 KeyCode::Down => state.move_vertical(1),
                 KeyCode::Enter | KeyCode::Char(' ') => state.select_case(),
-                _ => println!("other")
+                _ => {},
 
             }
 
@@ -223,18 +235,29 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Crosster
         )
         .split(r);
 
-    let mut text = format!("Player's turn: {}", state.next_player);
-    // Top text
-    if(state.winner != ' '){
-        text = format!("The winner is player {}", state.winner)
-    }
-
-    if(state.winner == ' ' && state.case_left == 0){
-        text = "It's a draw".to_owned()
-    }
+    let top_text = if state.winner != ' ' {
+        format!("The winner is player {}", state.winner)
+    } else if state.case_left == 0 {
+        "It's a draw".to_owned()
+    } else {
+        format!("Player's turn: {}", state.next_player)
+    };
+    
+    let bottom_text = if state.is_game_end() {
+        vec![
+            Spans::from(Span::raw("Play again: r")),
+            Spans::from(Span::raw("Quit: q")),
+        ]
+    } else {
+        vec![
+            Spans::from(Span::raw("Movement: ← ↓ ↑ →")),
+            Spans::from(Span::raw("Claim a box: ENTER / SPACE")),
+            Spans::from(Span::raw("Quit: q")),
+        ]
+    };
     let player_text = std::iter::repeat(Spans::from(Span::raw("")))
     .take(10)
-    .chain(std::iter::once(Spans::from(Span::raw(text))))
+    .chain(std::iter::once(Spans::from(Span::raw(top_text))))
     .collect::<Vec<_>>();
 
     let player_turn_paragraph = Paragraph::new(player_text)
@@ -242,13 +265,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Crosster
     
     f.render_widget(player_turn_paragraph, popup_layout[0]);
 
-    // Help text
-    let helper_text: Vec<Spans> = vec![
-        Spans::from(Span::raw("Movement: ← ↓ ↑ →")),
-        Spans::from(Span::raw("Claim a box: ENTER / SPACE")),
-        Spans::from(Span::raw("Quit: q")),
-    ];
-    let helper_paragraph = Paragraph::new(helper_text)
+    let helper_paragraph = Paragraph::new(bottom_text)
         .alignment(Alignment::Center);
     
     f.render_widget(helper_paragraph, popup_layout[2]);
