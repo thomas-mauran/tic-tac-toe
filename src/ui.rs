@@ -91,35 +91,37 @@ fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state:
         .constraints(vec![Constraint::Length(r.height / 3); 3])
         .split(r);
 
-    for row in layout_vertical.chunks(3) {
-        for (chunk_index, chunk) in row.iter().enumerate() {
-            let layout_horizontal = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints(vec![Constraint::Length(chunk.width / 3); 3])
-                .split(*chunk);
+    for (row_index, row) in layout_vertical.iter().enumerate() {
+        let layout_horizontal = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![Constraint::Length(row.width / 3); 3])
+            .split(*row);
 
-            for (slot_index, slot) in layout_horizontal.iter().enumerate() {
-                let current_case_char = state.board[chunk_index][slot_index];
-                let mut box_color = Color::LightYellow;       
+        for (slot_index, slot) in layout_horizontal.iter().enumerate() {
+            let current_case_char = state.board[row_index][slot_index];
+            let mut box_color = Color::LightYellow;
 
-                if chunk_index == state.cursor_y as usize && slot_index == state.cursor_x as usize {
-                    box_color = Color::White;
-                }
-
-                let block = Block::default()
-                    .borders(Borders::ALL)
-                    .border_type(BorderType::Rounded)
-                    .border_style(Style::default().fg(box_color));
-
-                let text_case = state.ascii_current_case(current_case_char);
-
-                let text_case_widget = Paragraph::new(text_case)
-                    .block(block.clone())
-                    .alignment(Alignment::Center)
-                    .style(Style::default().fg(if current_case_char == 'X' { Color::LightGreen } else { Color::LightRed }));
-                f.render_widget(text_case_widget, *slot);
-                f.render_widget(block, *slot);
+            if row_index == state.cursor_y as usize && slot_index == state.cursor_x as usize {
+                box_color = Color::White;
             }
+
+            let block = Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(box_color));
+
+            let text_case = state.ascii_current_case(current_case_char);
+
+            let text_case_widget = Paragraph::new(text_case)
+                .block(block.clone())
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(if current_case_char == 'X' {
+                    Color::LightGreen
+                } else {
+                    Color::LightRed
+                }));
+            f.render_widget(text_case_widget, *slot);
+            f.render_widget(block, *slot);
         }
     }
 }
