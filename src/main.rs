@@ -31,7 +31,7 @@ fn run_app(
 ) -> io::Result<()> {
     loop {
         // Draw the ui
-        terminal.draw(|f: &mut Frame<CrosstermBackend<io::Stdout>>| ui_render(f, state))?;
+        terminal.draw(|f: &mut Frame| ui_render(f, state))?;
 
         // Catch inputs
         if let Event::Key(key) = event::read()? {

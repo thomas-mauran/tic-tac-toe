@@ -1,15 +1,13 @@
 use crate::GameState;
 use ratatui::{
-    backend::CrosstermBackend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Spans},
+    text::{Span, Line},
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
 };
-use std::io;
 
-pub fn ui_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, state: &mut GameState) {
+pub fn ui_render(f: &mut Frame, state: &mut GameState) {
     let size = f.size();
 
     // MAIN BLOCK
@@ -31,7 +29,7 @@ pub fn centered_rect(
     percent_x: u16,
     percent_y: u16,
     r: Rect,
-    f: &mut Frame<CrosstermBackend<io::Stdout>>,
+    f: &mut Frame,
     state: &mut GameState,
 ) -> Rect {
     let popup_layout = Layout::default()
@@ -56,19 +54,19 @@ pub fn centered_rect(
 
     let bottom_text = if state.is_game_end() {
         vec![
-            Spans::from(Span::raw("Play again: r")),
-            Spans::from(Span::raw("Quit: q")),
+            Line::from(Span::raw("Play again: r")),
+            Line::from(Span::raw("Quit: q")),
         ]
     } else {
         vec![
-            Spans::from(Span::raw("Movement: ← ↓ ↑ →")),
-            Spans::from(Span::raw("Claim a box: ENTER / SPACE")),
-            Spans::from(Span::raw("Quit: q")),
+            Line::from(Span::raw("Movement: ← ↓ ↑ →")),
+            Line::from(Span::raw("Claim a box: ENTER / SPACE")),
+            Line::from(Span::raw("Quit: q")),
         ]
     };
-    let top_text = std::iter::repeat(Spans::from(Span::raw("")))
+    let top_text = std::iter::repeat(Line::from(Span::raw("")))
         .take(10)
-        .chain(std::iter::once(Spans::from(Span::raw(top_text))))
+        .chain(std::iter::once(Line::from(Span::raw(top_text))))
         .collect::<Vec<_>>();
 
     let player_turn_paragraph =
@@ -100,7 +98,7 @@ pub fn centered_rect(
 }
 
 pub fn game_area_render(
-    f: &mut Frame<CrosstermBackend<io::Stdout>>,
+    f: &mut Frame,
     r: Rect,
     state: &mut GameState,
 ) {
@@ -119,7 +117,7 @@ pub fn game_area_render(
             let current_case_char = state.board[row_index][slot_index];
             let mut box_color = Color::LightYellow;
 
-            if row_index == state.cursor_y as usize && slot_index == state.cursor_x as usize {
+            if row_index == state.cursor_y && slot_index == state.cursor_x {
                 box_color = Color::White;
             }
 

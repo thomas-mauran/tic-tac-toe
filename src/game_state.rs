@@ -1,4 +1,4 @@
-use ratatui::text::{Span, Spans};
+use ratatui::text::{Span, Line};
 
 pub struct GameState {
     pub cursor_x: usize,
@@ -21,7 +21,7 @@ impl Default for GameState {
             cursor_x: 0,
             cursor_y: 0,
             next_player: 'X',
-            board: board,
+            board,
             case_left: 9,
             winner: ' ',
         }
@@ -77,34 +77,34 @@ impl GameState {
         }
     }
 
-    pub fn ascii_current_case(&mut self, character: char) -> Vec<Spans> {
+    pub fn ascii_current_case(&mut self, character: char) -> Vec<Line> {
         match character {
             'O' => {
-                return vec![
-                    Spans::from(Span::raw("   ____  ")),
-                    Spans::from(Span::raw("  / __ \\")),
-                    Spans::from(Span::raw(" | |  | |")),
-                    Spans::from(Span::raw(" | |  | |")),
-                    Spans::from(Span::raw(" | |__| |")),
-                    Spans::from(Span::raw("  \\____/ ")),
+                vec![
+                    Line::from(Span::raw("   ____  ")),
+                    Line::from(Span::raw("  / __ \\")),
+                    Line::from(Span::raw(" | |  | |")),
+                    Line::from(Span::raw(" | |  | |")),
+                    Line::from(Span::raw(" | |__| |")),
+                    Line::from(Span::raw("  \\____/ ")),
                 ]
             }
 
             'X' => vec![
-                Spans::from(Span::raw("  __   __  ")),
-                Spans::from(Span::raw(" \\ \\ / /")),
-                Spans::from(Span::raw("  \\ V / ")),
-                Spans::from(Span::raw("   > <  ")),
-                Spans::from(Span::raw("  / . \\ ")),
-                Spans::from(Span::raw(" /_/ \\_\\")),
+                Line::from(Span::raw("  __   __  ")),
+                Line::from(Span::raw(" \\ \\ / /")),
+                Line::from(Span::raw("  \\ V / ")),
+                Line::from(Span::raw("   > <  ")),
+                Line::from(Span::raw("  / . \\ ")),
+                Line::from(Span::raw(" /_/ \\_\\")),
             ],
             _ => vec![
-                Spans::from(Span::raw("        ")),
-                Spans::from(Span::raw("        ")),
-                Spans::from(Span::raw("        ")),
-                Spans::from(Span::raw("        ")),
-                Spans::from(Span::raw("        ")),
-                Spans::from(Span::raw("        ")),
+                Line::from(Span::raw("        ")),
+                Line::from(Span::raw("        ")),
+                Line::from(Span::raw("        ")),
+                Line::from(Span::raw("        ")),
+                Line::from(Span::raw("        ")),
+                Line::from(Span::raw("        ")),
             ],
         }
     }
@@ -155,7 +155,7 @@ impl GameState {
         if self.winner != ' ' || self.case_left == 0 {
             return true;
         }
-        return false;
+        false
     }
 
     pub fn reload_game(&mut self) {
