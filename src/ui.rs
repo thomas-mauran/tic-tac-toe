@@ -1,27 +1,37 @@
-use ratatui::{backend::CrosstermBackend, Frame, widgets::{Block, Borders, BorderType, Paragraph}, style::{Style, Color, Modifier}, layout::{Direction, Layout, Rect, Constraint, Alignment}, text::{Spans, Span}};
-use std::io;
 use crate::GameState;
+use ratatui::{
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::{Span, Line},
+    widgets::{Block, BorderType, Borders, Paragraph},
+    Frame,
+};
 
-pub fn ui_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, state: &mut GameState) {
+pub fn ui_render(f: &mut Frame, state: &mut GameState) {
     let size = f.size();
 
     // MAIN BLOCK
     let main_block = Block::default()
-    .title("Tic Tac Toe")
-    .borders(Borders::ALL)
-    .border_type(ratatui::widgets::BorderType::Thick)
-    .border_style(Style::default().fg(Color::White));
+        .title("Tic Tac Toe")
+        .borders(Borders::ALL)
+        .border_type(ratatui::widgets::BorderType::Thick)
+        .border_style(Style::default().fg(Color::White));
 
-    let area = centered_rect(30, 55, size, f,state);
+    let area = centered_rect(30, 55, size, f, state);
 
     // Game board
     game_area_render(f, main_block.inner(area), state);
 
     f.render_widget(main_block, area);
-
 }
 /// helper function to create a centered rect using up certain percentage of the available rect `r`
-pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<CrosstermBackend<io::Stdout>>, state: &mut GameState) -> Rect {
+pub fn centered_rect(
+    percent_x: u16,
+    percent_y: u16,
+    r: Rect,
+    f: &mut Frame,
+    state: &mut GameState,
+) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -41,32 +51,37 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Cros
     } else {
         format!("Player's turn: {}", state.next_player)
     };
-    
+
     let bottom_text = if state.is_game_end() {
         vec![
-            Spans::from(Span::raw("Play again: r")),
-            Spans::from(Span::raw("Quit: q")),
+            Line::from(Span::raw("Play again: r")),
+            Line::from(Span::raw("Quit: q")),
         ]
     } else {
         vec![
-            Spans::from(Span::raw("Movement: ← ↓ ↑ →")),
-            Spans::from(Span::raw("Claim a box: ENTER / SPACE")),
-            Spans::from(Span::raw("Quit: q")),
+            Line::from(Span::raw("Movement: ← ↓ ↑ →")),
+            Line::from(Span::raw("Claim a box: ENTER / SPACE")),
+            Line::from(Span::raw("Quit: q")),
         ]
     };
-    let top_text = std::iter::repeat(Spans::from(Span::raw("")))
-    .take(10)
-    .chain(std::iter::once(Spans::from(Span::raw(top_text))))
-    .collect::<Vec<_>>();
+    let top_text = std::iter::repeat(Line::from(Span::raw("")))
+        .take(10)
+        .chain(std::iter::once(Line::from(Span::raw(top_text))))
+        .collect::<Vec<_>>();
 
-    let player_turn_paragraph = Paragraph::new(top_text)
-        .alignment(Alignment::Center).style(Style::default().add_modifier(if state.is_game_end() { Modifier::RAPID_BLINK} else {Modifier::BOLD}));
-    
+    let player_turn_paragraph =
+        Paragraph::new(top_text)
+            .alignment(Alignment::Center)
+            .style(Style::default().add_modifier(if state.is_game_end() {
+                Modifier::RAPID_BLINK
+            } else {
+                Modifier::BOLD
+            }));
+
     f.render_widget(player_turn_paragraph, popup_layout[0]);
 
-    let helper_paragraph = Paragraph::new(bottom_text)
-        .alignment(Alignment::Center);
-    
+    let helper_paragraph = Paragraph::new(bottom_text).alignment(Alignment::Center);
+
     f.render_widget(helper_paragraph, popup_layout[2]);
 
     Layout::default()
@@ -82,10 +97,11 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect, f: &mut Frame<Cros
         .split(popup_layout[1])[1]
 }
 
-pub 
-
-// Function to render the board 3x3
-fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state: &mut GameState) {
+pub fn game_area_render(
+    f: &mut Frame,
+    r: Rect,
+    state: &mut GameState,
+) {
     let layout_vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Length(r.height / 3); 3])
@@ -101,7 +117,7 @@ fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state:
             let current_case_char = state.board[row_index][slot_index];
             let mut box_color = Color::LightYellow;
 
-            if row_index == state.cursor_y as usize && slot_index == state.cursor_x as usize {
+            if row_index == state.cursor_y && slot_index == state.cursor_x {
                 box_color = Color::White;
             }
 
@@ -125,4 +141,3 @@ fn game_area_render(f: &mut Frame<CrosstermBackend<io::Stdout>>, r: Rect, state:
         }
     }
 }
-
