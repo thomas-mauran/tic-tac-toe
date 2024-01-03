@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -35,23 +35,25 @@ fn run_app(
 
         // Catch inputs
         if let Event::Key(key) = event::read()? {
-            match key.code {
-                KeyCode::Char('q') => {
-                    disable_raw_mode()?;
-                    execute!(
-                        terminal.backend_mut(),
-                        LeaveAlternateScreen,
-                        DisableMouseCapture
-                    )?;
-                    return Ok(());
+            if key.kind == KeyEventKind::Press {
+                match key.code {
+                    KeyCode::Char('q') => {
+                        disable_raw_mode()?;
+                        execute!(
+                            terminal.backend_mut(),
+                            LeaveAlternateScreen,
+                            DisableMouseCapture
+                        )?;
+                        return Ok(());
+                    }
+                    KeyCode::Left => state.move_horizontal(-1),
+                    KeyCode::Right => state.move_horizontal(1),
+                    KeyCode::Up => state.move_vertical(-1),
+                    KeyCode::Down => state.move_vertical(1),
+                    KeyCode::Enter | KeyCode::Char(' ') => state.select_case(),
+                    KeyCode::Char('r') => state.reload_game(),
+                    _ => {}
                 }
-                KeyCode::Left => state.move_horizontal(-1),
-                KeyCode::Right => state.move_horizontal(1),
-                KeyCode::Up => state.move_vertical(-1),
-                KeyCode::Down => state.move_vertical(1),
-                KeyCode::Enter | KeyCode::Char(' ') => state.select_case(),
-                KeyCode::Char('r') => state.reload_game(),
-                _ => {}
             }
         }
     }
