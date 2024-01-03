@@ -1,13 +1,16 @@
-use std::{io::{self}};
-use crossterm::{terminal::{enable_raw_mode, EnterAlternateScreen, disable_raw_mode, LeaveAlternateScreen}, execute, event::{EnableMouseCapture, DisableMouseCapture, KeyCode, Event, self}};
-use ratatui::{backend::{CrosstermBackend}, Terminal, Frame};
-use ui::ui_render;
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
 use game_state::GameState;
-mod ui;
+use ratatui::{backend::CrosstermBackend, Frame, Terminal};
+use std::io::{self};
+use ui::ui_render;
 mod game_state;
+mod ui;
 
 fn main() -> Result<(), io::Error> {
-
     // Setup the terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -20,22 +23,26 @@ fn main() -> Result<(), io::Error> {
 
     // App loop
     run_app(&mut terminal, &mut game_state)
-
 }
 
-fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, state: &mut GameState) -> io::Result<()>{
+fn run_app(
+    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    state: &mut GameState,
+) -> io::Result<()> {
     loop {
         // Draw the ui
-        terminal.draw(|f: &mut Frame<CrosstermBackend<io::Stdout>>| {
-            ui_render(f, state)
-        })?;
+        terminal.draw(|f: &mut Frame<CrosstermBackend<io::Stdout>>| ui_render(f, state))?;
 
         // Catch inputs
-        if let Event::Key(key) = event::read()?{
-            match key.code{
+        if let Event::Key(key) = event::read()? {
+            match key.code {
                 KeyCode::Char('q') => {
                     disable_raw_mode()?;
-                    execute!(terminal.backend_mut(), LeaveAlternateScreen, DisableMouseCapture)?;
+                    execute!(
+                        terminal.backend_mut(),
+                        LeaveAlternateScreen,
+                        DisableMouseCapture
+                    )?;
                     return Ok(());
                 }
                 KeyCode::Left => state.move_horizontal(-1),
@@ -44,15 +51,8 @@ fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, state: &mut Ga
                 KeyCode::Down => state.move_vertical(1),
                 KeyCode::Enter | KeyCode::Char(' ') => state.select_case(),
                 KeyCode::Char('r') => state.reload_game(),
-                _ => {},
-
+                _ => {}
             }
-
         }
-
     }
 }
-
-
-
-
