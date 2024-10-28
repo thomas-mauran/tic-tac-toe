@@ -8,7 +8,7 @@ use ratatui::{
 };
 
 pub fn ui_render(f: &mut Frame, state: &mut GameState) {
-    let size = f.size();
+    let size = f.area();
 
     // MAIN BLOCK
     let main_block = Block::default()
