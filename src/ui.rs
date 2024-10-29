@@ -2,13 +2,13 @@ use crate::GameState;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    text::{Span, Line},
+    text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
 };
 
 pub fn ui_render(f: &mut Frame, state: &mut GameState) {
-    let size = f.size();
+    let size = f.area();
 
     // MAIN BLOCK
     let main_block = Block::default()
@@ -97,11 +97,7 @@ pub fn centered_rect(
         .split(popup_layout[1])[1]
 }
 
-pub fn game_area_render(
-    f: &mut Frame,
-    r: Rect,
-    state: &mut GameState,
-) {
+pub fn game_area_render(f: &mut Frame, r: Rect, state: &mut GameState) {
     let layout_vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![Constraint::Length(r.height / 3); 3])

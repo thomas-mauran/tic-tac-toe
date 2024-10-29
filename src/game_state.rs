@@ -1,4 +1,4 @@
-use ratatui::text::{Span, Line};
+use ratatui::text::{Line, Span};
 
 pub struct GameState {
     pub cursor_x: usize,
